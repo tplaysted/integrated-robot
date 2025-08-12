@@ -1,6 +1,6 @@
 ## About
 
-Code to run on the robot (Raspberry Pi). 
+Code to run on the robot (Raspberry Pi). Designed to work with the [remote server code](https://github.com/tplaysted/integrated-server).
 
 ## Usage
 After cloning the repository to the raspberry pi, create a [virtual environment](https://docs.python.org/3/library/venv.html) in the installation folder. After activating the environment, get dependencies with `pip install -r requirements.txt`.
