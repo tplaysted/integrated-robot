@@ -1,0 +1,9 @@
+## About
+
+Code to run on the robot (Raspberry Pi). 
+
+## Usage
+After cloning the repository to the raspberry pi, create a [virtual environment](https://docs.python.org/3/library/venv.html) in the installation folder. After activating the environment, get dependencies with `pip install -r requirements.txt`.
+
+### Command listener
+Run `python cmd_sub.py` to start the command listener. Use `-i` to specify the interface. Run `arp -a` first to check the server address. For example if the key publisher is running on `192.168.50.123`, do `python cmd_sub.py -i 192.168.50.123`. The port can be set manually, but is recommended to leave the default. 
