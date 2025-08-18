@@ -79,8 +79,8 @@ if __name__=="__main__":
         vel[0] = update_vel(vel[0], target[0], delta)
         vel[1] = update_vel(vel[1], target[1], delta)
 
-        lm.value = vel[0]
-        rm.value = vel[1]
+        lm.value(vel[0])
+        rm.value(vel[1])
 
         print(f'Left motor: {lm.value:.2f}, Right motor: {rm.value:.2f}')
 
