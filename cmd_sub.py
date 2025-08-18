@@ -19,6 +19,8 @@ targets = { # target velocity for the wheels [lv, rv] for each command
 
 period = 1 # the time in seconds to ramp from zero to full speed
 
+pwm_freq = 2000
+
 def update_vel(current, target, delta): # step current vel towards target vel
     if current < target:
         return min(target, current + delta)
@@ -67,6 +69,12 @@ if __name__=="__main__":
     delta = period / rate # amount that the velocities will be stepped (constant ramp)
 
     lm, rm = Motor(17, 18), Motor(22, 23) # utility provided for GPIO PWM
+
+    # Set the pwm frequencies to something higher than the default 100 Hz
+    lm.forward_device.frequency = pwm_freq
+    lm.backward_device.frequency = pwm_freq
+    rm.forward_device.frequency = pwm_freq
+    rm.backward_device.frequency = pwm_freq
 
     # Begin the control loop
     while True:
