@@ -1,9 +1,11 @@
 # Command listener in python
 
 import zmq
-from gpiozero import Motor
+from gpiozero import AngularServo
 from time import sleep
 import argparse as ap
+
+# pyright: reportMissingImports=false
 
 targets = { # target velocity for the wheels [lv, rv] for each command
     'forward': [1, 1],
@@ -17,9 +19,7 @@ targets = { # target velocity for the wheels [lv, rv] for each command
     'still': [0, 0]
 }
 
-period = 1 # the time in seconds to ramp from zero to full speed
-
-pwm_freq = 2000
+tilt_speed = 30 # degrees per second
 
 def update_vel(current, target, delta): # step current vel towards target vel
     if current < target:
@@ -54,7 +54,7 @@ if __name__=="__main__":
     #  Socket to talk to server
     print("Connecting to command server…")
     socket = context.socket(zmq.SUB)
-    socket.setsockopt_string(zmq.SUBSCRIBE, 'cmd')
+    socket.setsockopt_string(zmq.SUBSCRIBE, 'tilt')
     socket.setsockopt(zmq.CONFLATE, 1) # only get the most recent command
 
     socket.connect('tcp://' + interface + ':' + port)
@@ -62,34 +62,20 @@ if __name__=="__main__":
 
     rate = 100 if args.rate is None else args.rate
 
-    vel: list[float] = [0, 0] # store the wheel output state in [lv, rv]
-    target: list[float] = [0, 0] # this is the target velocity we ramp to
-    cmd = 'still' # current command. Should always be defined
+    angle = 0
+    delta = tilt_speed / rate
+    tilt = 'stop' # this is the command
 
-    delta = period / rate # amount that the velocities will be stepped (constant ramp)
-
-    lm, rm = Motor(17, 18), Motor(22, 23) # utility provided for GPIO PWM
-
-    # Set the pwm frequencies to something higher than the default 100 Hz
-    lm.forward_device.frequency = pwm_freq
-    lm.backward_device.frequency = pwm_freq
-    rm.forward_device.frequency = pwm_freq
-    rm.backward_device.frequency = pwm_freq
+    servo = AngularServo(24)
 
     # Begin the control loop
     while True:
         try: # get any new commands
-            cmd = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            tilt = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
         except zmq.Again:
             pass # don't have to do anything - cmd should retain its previous value
 
-        target = targets[cmd]
-        vel[0] = update_vel(vel[0], target[0], delta)
-        vel[1] = update_vel(vel[1], target[1], delta)
+        print(tilt)
 
-        lm.value = vel[0]
-        rm.value = vel[1]
-
-        print(f'Left motor: {lm.value:.2f}, Right motor: {rm.value:.2f}')
 
         sleep(1 / rate)
