@@ -1,34 +1,15 @@
 # Command listener in python
 
 import zmq
+from gpiozero.pins.pigpio import PiGPIOFactory
 from gpiozero import AngularServo
 from time import sleep
 import argparse as ap
 
 # pyright: reportMissingImports=false
 
-targets = { # target velocity for the wheels [lv, rv] for each command
-    'forward': [1, 1],
-    'forwardleft': [0.5, 1],
-    'forwardright': [1, 0.5],
-    'backward': [-1, -1],
-    'backwardleft': [-0.5, -1],
-    'backwardright': [-1, -0.5],
-    'pivotleft': [-1, 1],
-    'pivotright': [1, -1],
-    'still': [0, 0]
-}
-
+pigpio_factory = PiGPIOFactory()
 tilt_speed = 30 # degrees per second
-
-def update_vel(current, target, delta): # step current vel towards target vel
-    if current < target:
-        return min(target, current + delta)
-
-    if current > target:
-        return max(target, current - delta)
-
-    return current
 
 if __name__=="__main__":
     # Get command line arguments
@@ -66,16 +47,25 @@ if __name__=="__main__":
     delta = tilt_speed / rate
     tilt = 'stop' # this is the command
 
-    servo = AngularServo(24)
+    # servo = AngularServo(24)
+    # servo.angle = 0
+    #
+    servo = AngularServo(24, pin_factory=pigpio_factory)
 
     # Begin the control loop
     while True:
         try: # get any new commands
             tilt = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
         except zmq.Again:
-            pass # don't have to do anything - cmd should retain its previous value
+            pass # don't have to do anything - tilt should retain its previous value
 
-        print(tilt)
+        if tilt == 'up':
+            angle = min(angle + delta, 90)
 
+        if tilt == 'down':
+            angle = max(angle - delta, -90)
+
+        servo.angle = angle
+        print(f'Servo angle = {servo.angle:.2f} degrees')
 
         sleep(1 / rate)
