@@ -44,6 +44,7 @@ if __name__=="__main__":
     rate = 100 if args.rate is None else args.rate
 
     angle = 0
+    target = 0
     delta = tilt_speed / rate
     tilt = 'stop' # this is the command
 
@@ -55,15 +56,17 @@ if __name__=="__main__":
     # Begin the control loop
     while True:
         try: # get any new commands
-            tilt = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            target = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
         except zmq.Again:
             pass # don't have to do anything - tilt should retain its previous value
 
-        if tilt == 'up':
-            angle = min(angle + delta, 90)
+        target = int(target)
 
-        if tilt == 'down':
-            angle = max(angle - delta, -90)
+        if target > angle:
+            angle = min(angle + delta, target)
+
+        if target < angle:
+            angle = max(angle - delta, target)
 
         servo.angle = angle
         print(f'Servo angle = {servo.angle:.2f} degrees')
