@@ -54,13 +54,13 @@ if __name__=="__main__":
     context = zmq.Context()
 
     #  Socket to talk to server
-    print("Connecting to command server…")
+    print("Motor command listener connecting to host…")
     socket = context.socket(zmq.SUB)
     socket.setsockopt_string(zmq.SUBSCRIBE, 'cmd')
     socket.setsockopt(zmq.CONFLATE, 1) # only get the most recent command
 
     socket.connect('tcp://' + interface + ':' + port)
-    print(f'Subscribed to port {port} on interface {interface} ...')
+    print(f'Command listener subscribed to port {port} on interface {interface} ...')
 
     rate = 100 if args.rate is None else args.rate
 
@@ -82,6 +82,7 @@ if __name__=="__main__":
     while True:
         try: # get any new commands
             cmd = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            print(f'Got command: {cmd}')
         except zmq.Again:
             pass # don't have to do anything - cmd should retain its previous value
 
@@ -91,7 +92,5 @@ if __name__=="__main__":
 
         lm.value = vel[0]
         rm.value = vel[1]
-
-        print(f'Left motor: {lm.value:.2f}, Right motor: {rm.value:.2f}')
 
         sleep(1 / rate)

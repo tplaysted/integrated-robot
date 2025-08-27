@@ -33,20 +33,20 @@ if __name__=="__main__":
     context = zmq.Context()
 
     #  Socket to talk to server
-    print("Connecting to command server…")
+    print("Servo listener connecting to host...")
     socket = context.socket(zmq.SUB)
     socket.setsockopt_string(zmq.SUBSCRIBE, 'tilt')
     socket.setsockopt(zmq.CONFLATE, 1) # only get the most recent command
 
     socket.connect('tcp://' + interface + ':' + port)
-    print(f'Subscribed to port {port} on interface {interface} ...')
+    print(f'Servo listener subscribed to port {port} on interface {interface} ...')
 
     rate = 100 if args.rate is None else args.rate
 
     angle = 0
     target = 0
+    request = ''
     delta = tilt_speed / rate
-    tilt = 'stop' # this is the command
 
     # servo = AngularServo(24)
     # servo.angle = 0
@@ -56,11 +56,14 @@ if __name__=="__main__":
     # Begin the control loop
     while True:
         try: # get any new commands
-            target = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            request = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            target = int(request)
+            print(f'Got angle request: {target:.2f}°')
         except zmq.Again:
             pass # don't have to do anything - tilt should retain its previous value
+        except ValueError:
+            print(f'Servo listener got angle request \'{request}\', expected int.')
 
-        target = int(target)
 
         if target > angle:
             angle = min(angle + delta, target)
@@ -69,6 +72,5 @@ if __name__=="__main__":
             angle = max(angle - delta, target)
 
         servo.angle = angle
-        print(f'Servo angle = {servo.angle:.2f} degrees')
 
         sleep(1 / rate)
