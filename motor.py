@@ -6,6 +6,7 @@ from time import sleep
 import argparse as ap
 
 # pyright: reportMissingImports=false
+# pyright: reportAttributeAccessIssue=false
 
 targets = { # target velocity for the wheels [lv, rv] for each command
     'forward': [1, 1],
@@ -20,8 +21,8 @@ targets = { # target velocity for the wheels [lv, rv] for each command
 }
 
 period = 1 # the time in seconds to ramp from zero to full speed
-
 pwm_freq = 5000
+throttle = 0.8
 
 def update_vel(current, target, delta): # step current vel towards target vel
     if current < target:
@@ -70,7 +71,7 @@ if __name__=="__main__":
 
     delta = period / rate # amount that the velocities will be stepped (constant ramp)
 
-    lm, rm = Motor(17, 18), Motor(22, 23) # utility provided for GPIO PWM
+    lm, rm = Motor(4, 27), Motor(22, 23) # utility provided for GPIO PWM
 
     # Set the pwm frequencies to something higher than the default 100 Hz
     lm.forward_device.frequency = pwm_freq
@@ -87,8 +88,8 @@ if __name__=="__main__":
             pass # don't have to do anything - cmd should retain its previous value
 
         target = targets[cmd]
-        vel[0] = update_vel(vel[0], target[0], delta)
-        vel[1] = update_vel(vel[1], target[1], delta)
+        vel[0] = update_vel(vel[0], throttle * target[0], delta)
+        vel[1] = update_vel(vel[1], throttle * target[1], delta)
 
         lm.value = vel[0]
         rm.value = vel[1]
