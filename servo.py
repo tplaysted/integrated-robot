@@ -9,7 +9,7 @@ import argparse as ap
 # pyright: reportMissingImports=false
 
 pigpio_factory = PiGPIOFactory()
-tilt_speed = 30 # degrees per second
+tilt_speed = 90 # degrees per second
 
 if __name__=="__main__":
     # Get command line arguments
@@ -48,10 +48,11 @@ if __name__=="__main__":
     request = ''
     delta = tilt_speed / rate
 
-    # servo = AngularServo(24)
-    # servo.angle = 0
-    #
-    servo = AngularServo(24, pin_factory=pigpio_factory)
+    servo = AngularServo(24, pin_factory=pigpio_factory,
+                             min_angle=180,
+                             max_angle=0,
+                             min_pulse_width=0.5/1000,
+                             max_pulse_width=2.5/1000)
 
     # Begin the control loop
     while True:
@@ -71,6 +72,9 @@ if __name__=="__main__":
         if target < angle:
             angle = max(angle - delta, target)
 
-        servo.angle = angle
+        try:
+            servo.angle = angle
+        except:
+            print('Unable to set servo')
 
         sleep(1 / rate)
