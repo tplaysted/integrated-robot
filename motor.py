@@ -22,7 +22,6 @@ targets = { # target velocity for the wheels [lv, rv] for each command
 
 period = 1 # the time in seconds to ramp from zero to full speed
 pwm_freq = 5000
-throttle = 0.8
 
 def update_vel(current, target, delta): # step current vel towards target vel
     if current < target:
@@ -54,20 +53,32 @@ if __name__=="__main__":
 
     context = zmq.Context()
 
-    #  Socket to talk to server
+    #  Socket to listen for driving commands
     print("Motor command listener connecting to host…")
-    socket = context.socket(zmq.SUB)
-    socket.setsockopt_string(zmq.SUBSCRIBE, 'cmd')
-    socket.setsockopt(zmq.CONFLATE, 1) # only get the most recent command
+    cmd_sock = context.socket(zmq.SUB)
+    cmd_sock.setsockopt_string(zmq.SUBSCRIBE, 'cmd')
+    cmd_sock.setsockopt(zmq.CONFLATE, 1) # only get the most recent command
 
-    socket.connect('tcp://' + interface + ':' + port)
+    cmd_sock.connect('tcp://' + interface + ':' + port)
     print(f'Command listener subscribed to port {port} on interface {interface} ...')
+
+    #  Socket to listen for throttle adjustment
+    print("Throttle listener connecting to host…")
+    thr_sock = context.socket(zmq.SUB)
+    thr_sock.setsockopt_string(zmq.SUBSCRIBE, 'throttle')
+    thr_sock.setsockopt(zmq.CONFLATE, 1) # only get the most recent command
+
+    thr_sock.connect('tcp://' + interface + ':' + port)
+    print(f'Throttle listener subscribed to port {port} on interface {interface} ...')
 
     rate = 100 if args.rate is None else args.rate
 
     vel: list[float] = [0, 0] # store the wheel output state in [lv, rv]
     target: list[float] = [0, 0] # this is the target velocity we ramp to
     cmd = 'still' # current command. Should always be defined
+    throttle = 0.8
+
+    cmd_req, thr_req = 'still', 80
 
     delta = period / rate # amount that the velocities will be stepped (constant ramp)
 
@@ -82,12 +93,25 @@ if __name__=="__main__":
     # Begin the control loop
     while True:
         try: # get any new commands
-            cmd = socket.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            cmd_req = cmd_sock.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            thr_req = thr_sock.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
             print(f'Got command: {cmd}')
-        except zmq.Again:
-            pass # don't have to do anything - cmd should retain its previous value
 
-        target = targets[cmd]
+            throttle = int(thr_req) / 100
+            throttle = min(max(throttle, 0.1), 1.0)
+
+            if cmd_req in targets:
+                cmd = cmd_req
+            else:
+                print(f'Got an unusable command: {cmd_req}')
+
+            target = targets[cmd]
+
+        except ValueError:
+            print(f'Could not convert throttle request {thr_req} to int')
+        except zmq.Again:
+            pass # don't have to do anything - got no requests
+
         vel[0] = update_vel(vel[0], throttle * target[0], delta)
         vel[1] = update_vel(vel[1], throttle * target[1], delta)
 
