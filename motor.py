@@ -94,23 +94,26 @@ if __name__=="__main__":
     while True:
         try: # get any new commands
             cmd_req = cmd_sock.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
-            thr_req = thr_sock.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
-            print(f'Got command: {cmd}')
-
-            throttle = int(thr_req) / 100
-            throttle = min(max(throttle, 0.1), 1.0)
 
             if cmd_req in targets:
                 cmd = cmd_req
+                print(f'Got command: {cmd}')
             else:
                 print(f'Got an unusable command: {cmd_req}')
+        except zmq.Again:
+            pass # didn't get a new request
 
-            target = targets[cmd]
-
+        try: # get any new throttle requests
+            thr_req = thr_sock.recv_string(flags=zmq.NOBLOCK).split(':')[1] # queue might be empty
+            throttle = int(thr_req) / 100
+            throttle = min(max(throttle, 0.1), 1.0)
+        except zmq.Again:
+            pass # didn't get a new request
         except ValueError:
             print(f'Could not convert throttle request {thr_req} to int')
-        except zmq.Again:
-            pass # don't have to do anything - got no requests
+            thr_req = str(int(100 * throttle)) # reset the throttle request
+
+        target = targets[cmd]
 
         vel[0] = update_vel(vel[0], throttle * target[0], delta)
         vel[1] = update_vel(vel[1], throttle * target[1], delta)
