@@ -22,6 +22,7 @@ targets = { # target velocity for the wheels [lv, rv] for each command
 
 period = 0.5 # the time in seconds to ramp from zero to full speed
 pwm_freq = 5000
+throttle = 0.8
 
 def update_vel(current, target, delta): # step current vel towards target vel
     if current < target:
