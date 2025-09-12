@@ -83,7 +83,7 @@ if __name__=="__main__":
 
     delta = period / rate # amount that the velocities will be stepped (constant ramp)
 
-    lm, rm = Motor(4, 27), Motor(22, 23) # utility provided for GPIO PWM
+    lm, rm = Motor(25, 27), Motor(22, 23) # utility provided for GPIO PWM
 
     # Set the pwm frequencies to something higher than the default 100 Hz
     lm.forward_device.frequency = pwm_freq
