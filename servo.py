@@ -43,16 +43,17 @@ if __name__=="__main__":
 
     rate = 100 if args.rate is None else args.rate
 
-    angle = 0
-    target = 0
+    angle = 30
+    target = 30
     request = ''
     delta = tilt_speed / rate
 
     servo = AngularServo(24, pin_factory=pigpio_factory,
-                             min_angle=180,
-                             max_angle=0,
+                             min_angle=0,
+                             max_angle=180,
                              min_pulse_width=0.5/1000,
-                             max_pulse_width=2.5/1000)
+                             max_pulse_width=2.5/1000,
+                             initial_angle=30)
 
     # Begin the control loop
     while True:

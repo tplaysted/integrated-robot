@@ -20,7 +20,7 @@ targets = { # target velocity for the wheels [lv, rv] for each command
     'still': [0, 0]
 }
 
-period = 0.5 # the time in seconds to ramp from zero to full speed
+period = 0.1 # the time in seconds to ramp from zero to full speed
 pwm_freq = 5000
 throttle = 0.8
 
@@ -81,7 +81,7 @@ if __name__=="__main__":
 
     cmd_req, thr_req = 'still', 80
 
-    delta = period / rate # amount that the velocities will be stepped (constant ramp)
+    delta = 1 / (period * rate) # amount that the velocities will be stepped (constant ramp)
 
     lm, rm = Motor(25, 27), Motor(22, 23) # utility provided for GPIO PWM
 
